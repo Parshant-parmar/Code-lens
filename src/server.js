@@ -1,11 +1,11 @@
 const app = require("./app");
 
-const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || "127.0.0.1";
 
 // server.js only starts HTTP; all app behavior lives in app.js and routes.
-const server = app.listen(PORT, HOST, () => {
-  console.log(`CodeLens is running at http://${HOST}:${PORT}`);
+const PORT = process.env.PORT || 3000;
+
+const server = app.listen(PORT, () => {
+  console.log(`CodeLens is running on port ${PORT}`);
 });
 
 server.on("error", (error) => {
