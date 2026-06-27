@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeLens</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <!-- App header: keep only controls a developer needs before analysis. -->
+    <header class="app-header">
+      <a class="brand" href="/" aria-label="CodeLens home">
+        <span class="brand-mark">CL</span>
+        <span class="brand-name">CodeLens</span>
+      </a>
+
+      <div class="header-controls">
+        <label class="language-field" for="languageSelect">Language</label>
+        <select id="languageSelect" aria-label="Language">
+          <option value="javascript">JavaScript</option>
+          <option value="typescript">TypeScript</option>
+          <option value="python">Python</option>
+          <option value="java">Java</option>
+          <option value="cpp">C++</option>
+          <option value="csharp">C#</option>
+          <option value="go">Go</option>
+          <option value="rust">Rust</option>
+          <option value="php">PHP</option>
+          <option value="ruby">Ruby</option>
+        </select>
+
+        <button id="themeToggle" class="icon-button" type="button" aria-label="Switch theme" title="Switch theme">
+          Dark
+        </button>
+      </div>
+    </header>
+
+    <!-- Main workspace: editor first, actions second, results only after Analyze. -->
+    <main class="workspace">
+      <section class="editor-shell" aria-label="Code editor">
+        <div id="editor" class="editor"></div>
+
+        <div class="editor-actions">
+          <button id="analyzeButton" class="primary-button" type="button">Analyze</button>
+          <button id="clearButton" class="secondary-button" type="button">Clear</button>
+          <button id="copyButton" class="secondary-button" type="button">Copy</button>
+        </div>
+
+        <p id="statusMessage" class="status-message" role="status" aria-live="polite"></p>
+      </section>
+
+      <!-- Hidden by default so the first screen behaves like JSONLint or regex101. -->
+      <section id="resultsSection" class="results-section" hidden>
+        <div class="metrics-grid" aria-label="Code analysis summary">
+          <article class="metric-card score-card">
+            <span>Overall Score</span>
+            <strong id="overallScore">-</strong>
+          </article>
+          <article class="metric-card">
+            <span>Time Complexity</span>
+            <strong id="timeComplexity">-</strong>
+          </article>
+          <article class="metric-card">
+            <span>Space Complexity</span>
+            <strong id="spaceComplexity">-</strong>
+          </article>
+          <article class="metric-card">
+            <span>Readability</span>
+            <strong id="readability">-</strong>
+          </article>
+          <article class="metric-card">
+            <span>Maintainability</span>
+            <strong id="maintainability">-</strong>
+          </article>
+        </div>
+
+        <div class="results-grid">
+          <article class="result-card">
+            <h2>Optimization Suggestions</h2>
+            <ul id="optimizationSuggestions"></ul>
+          </article>
+
+          <article class="result-card">
+            <h2>Possible Bugs</h2>
+            <ul id="possibleBugs"></ul>
+          </article>
+
+          <article class="result-card wide-card">
+            <h2>Refactored Code</h2>
+            <pre><code id="refactoredCode"></code></pre>
+          </article>
+
+          <article class="result-card">
+            <h2>Explanation</h2>
+            <p id="explanation"></p>
+          </article>
+
+          <article class="result-card">
+            <h2>Interview Feedback</h2>
+            <p id="interviewFeedback"></p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <!-- Monaco is loaded from a CDN so the app stays plain HTML/CSS/JS. -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>
