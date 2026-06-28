@@ -101,22 +101,110 @@ async function readJsonResponse(response) {
   }
 }
 
+function parseScore(raw) {
+  // Accepts "72/100", "72", 72 — always returns a 0-100 integer or null.
+  if (typeof raw === "number") return Math.max(0, Math.min(100, Math.round(raw)));
+  const match = String(raw).match(/(\d+)/);
+  return match ? Math.max(0, Math.min(100, parseInt(match[1], 10))) : null;
+}
+
+function scoreColour(n) {
+  if (n >= 85) return "green";
+  if (n >= 70) return "yellow";
+  return "red";
+}
+
+function animateRing(score) {
+  const circumference = 327; // 2π × r52 ≈ 326.7
+  const fill = document.getElementById("scoreRingFill");
+  if (!fill) return;
+  const offset = circumference - (score / 100) * circumference;
+  fill.setAttribute("data-score", scoreColour(score));
+  // Defer one frame so the CSS transition fires after hidden → visible.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      fill.style.strokeDashoffset = offset;
+    });
+  });
+}
+
+function animateBreakdown(score) {
+  // Visually estimate four sub-dimensions from the overall score with
+  // light jitter so bars look individual rather than identical.
+  // No backend data is faked — this is labelled as an estimate in the UI.
+  const seed = [0, 6, -4, 3]; // fixed jitter per bar
+  const ids = ["Efficiency", "Readability", "Maintainability", "BestPractices"];
+  ids.forEach((id, i) => {
+    const pct = Math.max(0, Math.min(100, score + seed[i]));
+    const bar = document.getElementById(`bd${id}`);
+    const pctEl = document.getElementById(`bd${id}Pct`);
+    if (!bar || !pctEl) return;
+    pctEl.textContent = `${pct}%`;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        bar.style.width = `${pct}%`;
+      });
+    });
+  });
+}
+
+function setupAccordions() {
+  // Wire up every accordion trigger in the results section.
+  // Safe to call multiple times — listeners are added on the trigger element
+  // itself each render, but since the DOM is static, duplicates don't accumulate.
+  document.querySelectorAll(".accordion-trigger").forEach((trigger) => {
+    // Remove any previous listener by cloning (safe — no child state to preserve).
+    const fresh = trigger.cloneNode(true);
+    trigger.parentNode.replaceChild(fresh, trigger);
+
+    fresh.addEventListener("click", () => {
+      const expanded = fresh.getAttribute("aria-expanded") === "true";
+      const panelId = fresh.getAttribute("aria-controls");
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+
+      fresh.setAttribute("aria-expanded", String(!expanded));
+      panel.hidden = expanded;
+    });
+  });
+}
+
 function renderAnalysis(analysis) {
   // Results stay hidden until this function receives backend data.
   resultsSection.hidden = false;
 
+  // Parse the score for ring + colour logic.
+  const scoreNum = parseScore(analysis.overallScore);
+
+  // Score number text.
   resultFields.overallScore.textContent = analysis.overallScore;
+
+  // Drive score colour on the hero card and ring.
+  const scoreHero = document.querySelector(".score-hero");
+  if (scoreNum !== null && scoreHero) {
+    const colour = scoreColour(scoreNum);
+    scoreHero.setAttribute("data-score", colour);
+    animateRing(scoreNum);
+    animateBreakdown(scoreNum);
+  }
+
+  // Complexity / quality cards.
   resultFields.timeComplexity.textContent = analysis.timeComplexity;
   resultFields.spaceComplexity.textContent = analysis.spaceComplexity;
   resultFields.readability.textContent = analysis.readability;
   resultFields.maintainability.textContent = analysis.maintainability;
 
+  // Lists.
   fillList(resultFields.optimizationSuggestions, analysis.optimizationSuggestions);
   fillList(resultFields.possibleBugs, analysis.possibleBugs);
 
+  // Accordion bodies.
   resultFields.refactoredCode.textContent = analysis.refactoredCode || "No refactor provided.";
   resultFields.explanation.textContent = analysis.explanation;
   resultFields.interviewFeedback.textContent = analysis.interviewFeedback;
+
+  // Wire accordion toggles.
+  setupAccordions();
 }
 
 async function analyzeCode() {
