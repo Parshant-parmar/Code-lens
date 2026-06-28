@@ -24,7 +24,6 @@ class AnalysisError extends Error {
 }
 
 function getApiKey() {
-  // The API key stays on the server so the browser never exposes it.
   const apiKey = process.env.GEMINI_API_KEY?.trim();
 
   if (!apiKey) {
@@ -35,7 +34,6 @@ function getApiKey() {
 }
 
 function buildPrompt({ code, language }) {
-  // A strict prompt makes the backend response predictable for the UI.
   return `
 Analyze this ${language} code for a developer tool named CodeLens.
 
@@ -62,7 +60,6 @@ ${code}
 }
 
 function buildGeminiRequest(prompt) {
-  // responseMimeType asks Gemini for JSON while the controller still validates it.
   return {
     contents: [
       {
@@ -88,7 +85,6 @@ function extractTextFromGemini(payload) {
 }
 
 function parseJson(text) {
-  // Trim markdown fences just in case the model ignores the JSON-only instruction.
   const cleanedText = text
     .trim()
     .replace(/^```json\s*/i, "")
@@ -125,7 +121,6 @@ function normalizeList(value) {
 }
 
 function validateAnalysis(analysis) {
-  // Validate every field so the frontend can render without defensive clutter.
   const missingKey = REQUIRED_KEYS.find((key) => !(key in analysis));
 
   if (missingKey) {
@@ -153,6 +148,30 @@ function getRequestUrl() {
   return `${GEMINI_API_URL}/${model}:generateContent?key=${apiKey}`;
 }
 
+function logGeminiApiResponse({ response, responseBody, parsedBody }) {
+  const geminiError = parsedBody?.error;
+
+  console.error("Gemini API error response:", {
+    httpStatusCode: response.status,
+    httpStatusText: response.statusText,
+    responseBody,
+    errorCode: geminiError?.code,
+    errorStatus: geminiError?.status,
+    errorMessage: geminiError?.message,
+    errorDetails: geminiError?.details,
+    stack: geminiError?.stack,
+  });
+}
+
+function logGeminiNetworkError(error) {
+  console.error("Gemini API network error:", {
+    message: error.message,
+    name: error.name,
+    cause: error.cause,
+    stack: error.stack,
+  });
+}
+
 async function fetchWithTimeout(url, options) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -164,9 +183,11 @@ async function fetchWithTimeout(url, options) {
     });
   } catch (error) {
     if (error.name === "AbortError") {
+      logGeminiNetworkError(error);
       throw new AnalysisError("Gemini request timed out. Please try again.", 504);
     }
 
+    logGeminiNetworkError(error);
     throw new AnalysisError("Unable to reach Gemini. Check your network connection and try again.", 502);
   } finally {
     clearTimeout(timeout);
@@ -177,12 +198,18 @@ async function readGeminiPayload(response) {
   const text = await response.text();
 
   if (!text) {
-    return {};
+    return { payload: {}, responseBody: "" };
   }
 
   try {
-    return JSON.parse(text);
+    return { payload: JSON.parse(text), responseBody: text };
   } catch (error) {
+    logGeminiApiResponse({
+      response,
+      responseBody: text,
+      parsedBody: null,
+    });
+
     throw new AnalysisError("Gemini returned an unreadable response. Please try again.", 502);
   }
 }
@@ -213,9 +240,15 @@ async function callGemini(prompt) {
     body: JSON.stringify(buildGeminiRequest(prompt)),
   });
 
-  const payload = await readGeminiPayload(response);
+  const { payload, responseBody } = await readGeminiPayload(response);
 
   if (!response.ok) {
+    logGeminiApiResponse({
+      response,
+      responseBody,
+      parsedBody: payload,
+    });
+
     throw buildGeminiError(payload, response.status);
   }
 
