@@ -1,6 +1,6 @@
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const DEFAULT_MODEL = "gemini-2.5-flash";
-const REQUEST_TIMEOUT_MS = 20000;
+const REQUEST_TIMEOUT_MS = 60000;
 
 const REQUIRED_KEYS = [
   "overallScore",
@@ -232,27 +232,36 @@ function buildGeminiError(payload, status) {
 
   return new AnalysisError("Gemini request failed. Please try again.", status >= 500 ? 502 : 400);
 }
+function isRetryableError(error) {
+  if (!(error instanceof AnalysisError)) return false;
+  const timedOut = error.statusCode === 504;
+  const networkFail = error.statusCode === 502 && error.message.startsWith("Unable to reach Gemini");
+  return timedOut || networkFail;
+}
 
-async function callGemini(prompt) {
+async function callGeminiOnce(prompt) {
   const response = await fetchWithTimeout(getRequestUrl(), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(buildGeminiRequest(prompt)),
   });
-
-  const { payload, responseBody } = await readGeminiPayload(response);
-
+  const payload = await readGeminiPayload(response);
   if (!response.ok) {
-    logGeminiApiResponse({
-      response,
-      responseBody,
-      parsedBody: payload,
-    });
-
     throw buildGeminiError(payload, response.status);
   }
-
   return payload;
+}
+async function callGemini(prompt) {
+  try {
+    return await callGeminiOnce(prompt);
+  } catch (firstError) {
+    if (!isRetryableError(firstError)) {
+      throw firstError;
+    }
+    console.error(`Gemini attempt 1 failed (${firstError.message}). Retrying in 2 s …`);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    return await callGeminiOnce(prompt);
+  }
 }
 
 async function getCodeAnalysis({ code, language }) {
