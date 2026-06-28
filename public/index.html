@@ -50,55 +50,116 @@
       </section>
 
       <!-- Hidden by default so the first screen behaves like JSONLint or regex101. -->
-      <section id="resultsSection" class="results-section" hidden>
-        <div class="metrics-grid" aria-label="Code analysis summary">
-          <article class="metric-card score-card">
-            <span>Overall Score</span>
-            <strong id="overallScore">-</strong>
+      <section id="resultsSection" class="results-section" hidden aria-label="Analysis results">
+
+        <!-- Row 1: Score hero + complexity pair -->
+        <div class="results-top">
+
+          <!-- Score card -->
+          <article class="r-card score-hero" aria-label="Overall score">
+            <div class="score-ring-wrap">
+              <svg class="score-ring" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="score-ring-track" cx="60" cy="60" r="52"/>
+                <circle class="score-ring-fill" id="scoreRingFill" cx="60" cy="60" r="52"/>
+              </svg>
+              <div class="score-center">
+                <strong id="overallScore" class="score-number">-</strong>
+                <span class="score-label">Score</span>
+              </div>
+            </div>
+            <div class="score-meta">
+              <span class="card-eyebrow">⭐ Overall Score</span>
+              <div class="score-breakdown" aria-label="Score breakdown">
+                <div class="breakdown-row">
+                  <span class="breakdown-name">Efficiency</span>
+                  <div class="breakdown-bar-track"><div class="breakdown-bar" id="bdEfficiency"></div></div>
+                  <span class="breakdown-pct" id="bdEfficiencyPct"></span>
+                </div>
+                <div class="breakdown-row">
+                  <span class="breakdown-name">Readability</span>
+                  <div class="breakdown-bar-track"><div class="breakdown-bar" id="bdReadability"></div></div>
+                  <span class="breakdown-pct" id="bdReadabilityPct"></span>
+                </div>
+                <div class="breakdown-row">
+                  <span class="breakdown-name">Maintainability</span>
+                  <div class="breakdown-bar-track"><div class="breakdown-bar" id="bdMaintainability"></div></div>
+                  <span class="breakdown-pct" id="bdMaintainabilityPct"></span>
+                </div>
+                <div class="breakdown-row">
+                  <span class="breakdown-name">Best Practices</span>
+                  <div class="breakdown-bar-track"><div class="breakdown-bar" id="bdBestPractices"></div></div>
+                  <span class="breakdown-pct" id="bdBestPracticesPct"></span>
+                </div>
+              </div>
+            </div>
           </article>
-          <article class="metric-card">
-            <span>Time Complexity</span>
-            <strong id="timeComplexity">-</strong>
+
+          <!-- Complexity pair -->
+          <div class="complexity-pair">
+            <article class="r-card complexity-card">
+              <span class="card-eyebrow">⏱ Time Complexity</span>
+              <strong id="timeComplexity" class="complexity-value">-</strong>
+            </article>
+            <article class="r-card complexity-card">
+              <span class="card-eyebrow">💾 Space Complexity</span>
+              <strong id="spaceComplexity" class="complexity-value">-</strong>
+            </article>
+            <article class="r-card complexity-card">
+              <span class="card-eyebrow">📖 Readability</span>
+              <strong id="readability" class="complexity-value">-</strong>
+            </article>
+            <article class="r-card complexity-card">
+              <span class="card-eyebrow">🛠 Maintainability</span>
+              <strong id="maintainability" class="complexity-value">-</strong>
+            </article>
+          </div>
+        </div>
+
+        <!-- Row 2: Bugs + Suggestions side by side -->
+        <div class="results-row2">
+          <article class="r-card">
+            <h2 class="card-title">🐞 Possible Bugs</h2>
+            <ul id="possibleBugs" class="issue-list"></ul>
           </article>
-          <article class="metric-card">
-            <span>Space Complexity</span>
-            <strong id="spaceComplexity">-</strong>
-          </article>
-          <article class="metric-card">
-            <span>Readability</span>
-            <strong id="readability">-</strong>
-          </article>
-          <article class="metric-card">
-            <span>Maintainability</span>
-            <strong id="maintainability">-</strong>
+          <article class="r-card">
+            <h2 class="card-title">⚡ Optimization Suggestions</h2>
+            <ul id="optimizationSuggestions" class="issue-list"></ul>
           </article>
         </div>
 
-        <div class="results-grid">
-          <article class="result-card">
-            <h2>Optimization Suggestions</h2>
-            <ul id="optimizationSuggestions"></ul>
+        <!-- Row 3: Accordions -->
+        <div class="results-accordions">
+
+          <article class="r-card accordion-card">
+            <button class="accordion-trigger" aria-expanded="false" aria-controls="panelRefactored" type="button">
+              <span>💻 Refactored Code</span>
+              <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+            </button>
+            <div class="accordion-panel" id="panelRefactored" hidden>
+              <pre class="code-block"><code id="refactoredCode"></code></pre>
+            </div>
           </article>
 
-          <article class="result-card">
-            <h2>Possible Bugs</h2>
-            <ul id="possibleBugs"></ul>
+          <article class="r-card accordion-card">
+            <button class="accordion-trigger" aria-expanded="false" aria-controls="panelExplanation" type="button">
+              <span>💡 Explanation</span>
+              <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+            </button>
+            <div class="accordion-panel" id="panelExplanation" hidden>
+              <p id="explanation" class="accordion-body"></p>
+            </div>
           </article>
 
-          <article class="result-card wide-card">
-            <h2>Refactored Code</h2>
-            <pre><code id="refactoredCode"></code></pre>
+          <article class="r-card accordion-card">
+            <button class="accordion-trigger" aria-expanded="false" aria-controls="panelInterview" type="button">
+              <span>🎯 Interview Feedback</span>
+              <svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+            </button>
+            <div class="accordion-panel" id="panelInterview" hidden>
+              <p id="interviewFeedback" class="accordion-body"></p>
+            </div>
           </article>
 
-          <article class="result-card">
-            <h2>Explanation</h2>
-            <p id="explanation"></p>
-          </article>
-
-          <article class="result-card">
-            <h2>Interview Feedback</h2>
-            <p id="interviewFeedback"></p>
-          </article>
         </div>
       </section>
     </main>
