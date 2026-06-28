@@ -245,8 +245,9 @@ async function callGeminiOnce(prompt) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(buildGeminiRequest(prompt)),
   });
-  const payload = await readGeminiPayload(response);
+  const { payload, responseBody } = await readGeminiPayload(response);
   if (!response.ok) {
+    logGeminiApiResponse({ response, responseBody, parsedBody: payload });
     throw buildGeminiError(payload, response.status);
   }
   return payload;
